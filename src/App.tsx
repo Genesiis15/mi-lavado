@@ -468,7 +468,7 @@ function App() {
                 <label htmlFor="dateClick">
 
                   <CalendarIcon  onClick={handleDateClick} style={{color:'#5ea0ff', fontSize:35}}/>
-                  <input type="date" name="dateClick" id="dateClick" onChange={handleInputChange} style={{ display: 'none' }} />
+                  <input type="date" name="dateClick" id="dateClick" onChange={handleInputChange} style={{ width:0, height:0, border:'none', position:'absolute', bottom:'60%', left:'40%'}} />
                 </label>
               </Box>
 
