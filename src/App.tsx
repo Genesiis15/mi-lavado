@@ -1,30 +1,34 @@
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import FaceIcon from '@mui/icons-material/Face';
-import LocalCarWashIcon from '@mui/icons-material/LocalCarWash';
-import SearchIcon from '@mui/icons-material/Search';
-import WaterDropIcon from '@mui/icons-material/WaterDrop';
-import { CircularProgress, InputAdornment, OutlinedInput, useMediaQuery } from '@mui/material';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
-import Chip from '@mui/material/Chip';
-import Modal from '@mui/material/Modal';
-import Paper from '@mui/material/Paper';
-import { SelectChangeEvent } from '@mui/material/Select';
-import Stack from '@mui/material/Stack';
-import { styled } from '@mui/material/styles';
-import Table from '@mui/material/Table';
-import TableBody from '@mui/material/TableBody';
-import TableCell, { tableCellClasses } from '@mui/material/TableCell';
-import TableContainer from '@mui/material/TableContainer';
-import TableHead from '@mui/material/TableHead';
-import TableRow from '@mui/material/TableRow';
-import Typography from '@mui/material/Typography';
+import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
+import FaceIcon from "@mui/icons-material/Face";
+import LocalCarWashIcon from "@mui/icons-material/LocalCarWash";
+import SearchIcon from "@mui/icons-material/Search";
+import WaterDropIcon from "@mui/icons-material/WaterDrop";
+import {
+  CircularProgress,
+  InputAdornment,
+  OutlinedInput,
+  useMediaQuery,
+} from "@mui/material";
+import Box from "@mui/material/Box";
+import Button from "@mui/material/Button";
+import Chip from "@mui/material/Chip";
+import Modal from "@mui/material/Modal";
+import Paper from "@mui/material/Paper";
+import { SelectChangeEvent } from "@mui/material/Select";
+import Stack from "@mui/material/Stack";
+import { styled } from "@mui/material/styles";
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell, { tableCellClasses } from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Typography from "@mui/material/Typography";
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
-import moment from 'moment';
-import React, { ChangeEvent, useEffect, useState } from 'react';
-import './App.css';
-import { db } from './firebase';
-
+import moment from "moment";
+import React, { useEffect, useState } from "react";
+import "./App.css";
+import { db } from "./firebase";
 
 import {
   Card,
@@ -36,9 +40,14 @@ import {
   MenuItem,
   Select,
   TextField,
-} from '@mui/material';
-import Grid from '@mui/material/Grid2';
-import { CalendarIcon } from '@mui/x-date-pickers';
+} from "@mui/material";
+import Grid from "@mui/material/Grid2";
+import {
+  CalendarIcon,
+  DatePicker,
+  LocalizationProvider,
+} from "@mui/x-date-pickers";
+import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 
 interface RowData {
   cliente: string;
@@ -53,49 +62,46 @@ interface RowDataId {
   tipoLavado: string;
   tipoVehiculo: string;
   timestamp: number;
-  id:string
+  id: string;
 }
 
 interface TipoLavado {
   type: string;
-  value: string
+  value: string;
 }
 
-type tipoVehiculo = string
+type tipoVehiculo = string;
 
-type lavadores = string
-
-
-interface DatePickerInput extends HTMLElement {
-  showPicker(): void;
-}
+type lavadores = string;
 
 
 
 function App() {
   // const mobileView = useMediaQuery('(max-width: 768px)');
-  const mobileView = useMediaQuery('(max-width: 600px)');
-  const buttonSize = mobileView ? 'small' : 'medium';
-  const modalSize = mobileView ? '300px' : '500px';
+  const mobileView = useMediaQuery("(max-width: 600px)");
+  const buttonSize = mobileView ? "small" : "medium";
+  const modalSize = mobileView ? "300px" : "500px";
   const [open, setOpen] = useState(false);
   const [tipoLavado, setTipoLavado] = useState<TipoLavado[]>([]);
   const [tipoVehiculo, setTipoVehiculo] = useState<tipoVehiculo[]>([]);
   const [lavadores, setLavadores] = useState<lavadores[]>([]);
   const [data, setData] = useState<RowData>({
-    cliente: '',
-    lavadores: '',
-    tipoLavado: '',
-    tipoVehiculo: '',
-    timestamp: Date.now()
+    cliente: "",
+    lavadores: "",
+    tipoLavado: "",
+    tipoVehiculo: "",
+    timestamp: Date.now(),
   });
-  const [lavados, setLavados] = useState<RowData[] | RowDataId[] |null>(null);
-  const [search, setSearch] = useState('');
+  const [lavados, setLavados] = useState<RowData[] | RowDataId[] | null>(null);
+  const [search, setSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(new Date());
- 
+
   const [loader, setLoader] = useState(false);
 
-
+  const [openModalDate, setOpenModalDate] = useState(false);
+  const handleOpenModalDate = () => setOpenModalDate(true);
+  const handleClose = () => setOpenModalDate(false);
 
   const StyledTableCell = styled(TableCell)(({ theme }) => ({
     [`&.${tableCellClasses.head}`]: {
@@ -107,29 +113,33 @@ function App() {
     },
   }));
   const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearch(event.target.value)
+    setSearch(event.target.value);
     setIsSearching(true);
   };
 
   const style = {
-    position: 'absolute' as const,
-    top: '50%',
-    left: '50%',
-    transform: 'translate(-50%, -50%)',
+    position: "absolute" as const,
+    top: "50%",
+    left: "50%",
+    transform: "translate(-50%, -50%)",
 
-    bgcolor: 'background.paper',
-    borderRadius:'5px',
+    bgcolor: "background.paper",
+    borderRadius: "5px",
     boxShadow: 24,
     p: 4,
-    width: modalSize, height: 'auto', maxWidth: 'none', maxHeight: 'none', overflow: 'hidden'
+    width: modalSize,
+    height: "auto",
+    maxWidth: "none",
+    maxHeight: "none",
+    overflow: "hidden",
   };
 
   const StyledTableRow = styled(TableRow)(({ theme }) => ({
-    '&:nth-of-type(odd)': {
+    "&:nth-of-type(odd)": {
       backgroundColor: theme.palette.action.hover,
     },
 
-    '&:last-child td, &:last-child th': {
+    "&:last-child td, &:last-child th": {
       border: 0,
     },
   }));
@@ -137,21 +147,24 @@ function App() {
   function handleOpen() {
     setOpen(true);
   }
-  const disabledHandle =()=>{
-    if(data.cliente.length > 0 && data.lavadores.length > 0 && data.tipoLavado.length > 0 && data.tipoVehiculo.length > 0){
-      return false
+  const disabledHandle = () => {
+    if (
+      data.cliente.length > 0 &&
+      data.lavadores.length > 0 &&
+      data.tipoLavado.length > 0 &&
+      data.tipoVehiculo.length > 0
+    ) {
+      return false;
     }
-    return true
-  }
-
-
+    return true;
+  };
 
   const filterByDate = async () => {
     const startOfDay = new Date();
     startOfDay.setHours(0, 0, 0, 0);
     if (startDate !== null) {
-      const endDateNew = new Date(startDate.getTime())
-      endDateNew.setHours(23, 59, 59, 999)
+      const endDateNew = new Date(startDate.getTime());
+      endDateNew.setHours(23, 59, 59, 999);
       const endOfDay = new Date(startOfDay);
       endOfDay.setHours(23, 59, 59, 999);
       // if (!startDate || !endDate) {
@@ -161,18 +174,18 @@ function App() {
 
       try {
         startDate.setHours(0, 0, 0, 0);
-   
-        setLoader(true)
+
+        setLoader(true);
         const q = query(
           collection(db, "lavado"),
           where("timestamp", ">=", startDate.getTime()),
           where("timestamp", "<=", endDateNew.getTime())
         );
         const querySnapshot = await getDocs(q);
-        const filteredResults:RowDataId[] = [];
-        querySnapshot.docs.map(doc => {
+        const filteredResults: RowDataId[] = [];
+        querySnapshot.docs.map((doc) => {
           console.log(doc.data());
-          const dataL = doc.data() as RowData
+          const dataL = doc.data() as RowData;
           filteredResults.push({
             ...dataL,
             id: doc.id,
@@ -181,51 +194,52 @@ function App() {
         setLavados(filteredResults);
         setIsSearching(false);
       } catch (error) {
-        console.error('Error al filtrar por fecha:', error);
-        alert('Ocurrió un error al buscar por fecha. Por favor, inténtelo nuevamente.');
-      }finally{
-        setLoader(false)
+        console.error("Error al filtrar por fecha:", error);
+        alert(
+          "Ocurrió un error al buscar por fecha. Por favor, inténtelo nuevamente."
+        );
+      } finally {
+        setLoader(false);
       }
     }
-
   };
 
-
-
-
-  const createDoc = async (event: React.FormEvent<HTMLFormElement>): Promise<void> => {
+  const createDoc = async (
+    event: React.FormEvent<HTMLFormElement>
+  ): Promise<void> => {
     event.preventDefault();
-   
-       if(data.cliente.length > 0 && data.lavadores.length > 0 && data.tipoLavado.length > 0 && data.tipoVehiculo.length > 0){
-    console.log('entro',data);
-        
-        // const docRef = await addDoc(collection(db, "lavado"), {
-        //   ...data,
-        //   timestamp: Date.now(),
-        // });
-        // setLavados(prevLavados => [{ ...data, timestamp: Date.now() }, ...prevLavados]);
-        // console.log("Document written with ID: ", docRef.id);
-        // handleCloseModal();
-      }
-    try {
-    
-        const docRef = await addDoc(collection(db, "lavado"), {
-          ...data,
-          timestamp: Date.now(),
-        });
-        if(lavados){
 
-          setLavados([{ ...data, timestamp: Date.now() },...lavados])
-        }
-        // setLavados(prevLavados => {
-        //   if(prevLavados){
-        //    return[{ ...data, timestamp: Date.now() }, ...prevLavados]
-        //   }
-        // });
-        console.log("Document written with ID: ", docRef.id);
-        handleCloseModal();
-     
-  
+    if (
+      data.cliente.length > 0 &&
+      data.lavadores.length > 0 &&
+      data.tipoLavado.length > 0 &&
+      data.tipoVehiculo.length > 0
+    ) {
+      console.log("entro", data);
+
+      // const docRef = await addDoc(collection(db, "lavado"), {
+      //   ...data,
+      //   timestamp: Date.now(),
+      // });
+      // setLavados(prevLavados => [{ ...data, timestamp: Date.now() }, ...prevLavados]);
+      // console.log("Document written with ID: ", docRef.id);
+      // handleCloseModal();
+    }
+    try {
+      const docRef = await addDoc(collection(db, "lavado"), {
+        ...data,
+        timestamp: Date.now(),
+      });
+      if (lavados) {
+        setLavados([{ ...data, timestamp: Date.now() }, ...lavados]);
+      }
+      // setLavados(prevLavados => {
+      //   if(prevLavados){
+      //    return[{ ...data, timestamp: Date.now() }, ...prevLavados]
+      //   }
+      // });
+      console.log("Document written with ID: ", docRef.id);
+      handleCloseModal();
     } catch (error: unknown) {
       if (error instanceof Error) {
         console.error("Error adding document: ", error.message);
@@ -233,77 +247,59 @@ function App() {
         console.error("An unknown error occurred");
       }
     }
-
   };
 
   const handleCloseModal = () => {
     setOpen(false);
     setData({
-      cliente: '',
-      tipoVehiculo: '',
-      tipoLavado: 'Basico',
-      lavadores: '',
-      timestamp: Date.now()
+      cliente: "",
+      tipoVehiculo: "",
+      tipoLavado: "Basico",
+      lavadores: "",
+      timestamp: Date.now(),
     });
   };
 
   const handleValueLavado = (value: string) => {
-    if (value === 'basico') {
-      return 10
+    if (value === "basico") {
+      return 10;
     }
-    if (value === 'fuerte') {
-      return 20
+    if (value === "fuerte") {
+      return 20;
     }
-    if (value === 'medio') {
-      return 15
+    if (value === "medio") {
+      return 15;
     }
-    return 0
+    return 0;
   };
-  const handleDateClick = () => {
-    const input = document.getElementById('dateClick') as DatePickerInput;
 
-    if (input) {
-      // Simular un click en el input
-      input.click();
-  
-      // Si el navegador soporta showPicker(), usarlo
-      if ('showPicker' in input) {
-        input.showPicker();
-      }
-    }
-  };
-  const handleInputChange = (e:ChangeEvent<HTMLInputElement>) => {
-    console.log(e.target.value);
+  const handleInputChange = (e: string) => {
+    console.log(e);
 
-    const date = new Date(new Date(e.target.value).getTime() + 86400000);
+    const date = new Date(new Date(e).getTime());
     console.log(date);
 
     setStartDate(date);
+    setOpenModalDate(false);
   };
 
   async function filterByLavadores() {
-
     try {
-
-      const q = query(
-        collection(db, "lavado"),
-        where("cliente", "==", search)
-      );
-      setLoader(true)
+      const q = query(collection(db, "lavado"), where("cliente", "==", search));
+      setLoader(true);
       const querySnapshot = await getDocs(q);
-
 
       if (querySnapshot.empty) {
         setIsSearching(false);
-        alert('No se encontró ningún cliente con ese nombre');
+        alert("No se encontró ningún cliente con ese nombre");
         return;
       }
 
-      const filteredResults:RowDataId[] = [];
+      const filteredResults: RowDataId[] = [];
 
       querySnapshot.forEach((doc) => {
-        console.log(doc.data() as RowData)
-        const dataL = doc.data() as RowData
+        console.log(doc.data() as RowData);
+        const dataL = doc.data() as RowData;
         filteredResults.push({
           ...dataL,
           id: doc.id,
@@ -311,70 +307,57 @@ function App() {
       });
       setLavados(filteredResults);
       setIsSearching(false);
-
     } catch (error) {
-      console.error('Error al filtrar lavadores:', error);
-      alert('Ocurrió un error al buscar clientes. Por favor, inténtelo nuevamente.');
-
-    }finally{
-      setLoader(false)
+      console.error("Error al filtrar lavadores:", error);
+      alert(
+        "Ocurrió un error al buscar clientes. Por favor, inténtelo nuevamente."
+      );
+    } finally {
+      setLoader(false);
     }
-
 
     // return filteredResults.slice(0, limit);
   }
   const obtenerDatos = async () => {
-   
     const querySnapshot = await getDocs(collection(db, "tipoLavado"));
     querySnapshot.forEach((doc) => {
-
-      setTipoLavado(doc.data().lavados)
-
+      setTipoLavado(doc.data().lavados);
     });
   };
 
   const obtenerDatosVehiculo = async () => {
     const querySnapshot = await getDocs(collection(db, "tipoVehiculo"));
     querySnapshot.forEach((doc) => {
-
-      setTipoVehiculo(doc.data().vehiculos)
-
+      setTipoVehiculo(doc.data().vehiculos);
     });
-
   };
   const obtenerDatosLabadores = async () => {
     const querySnapshot = await getDocs(collection(db, "lavadores"));
     querySnapshot.forEach((doc) => {
-
-      setLavadores(doc.data().lavadores)
-
+      setLavadores(doc.data().lavadores);
     });
-
   };
   const obtenerData = async () => {
     try {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
-      setLoader(true)
+      setLoader(true);
       const q = query(
         collection(db, "lavado"),
-        where("timestamp", ">=", startOfDay.getTime()),
-  
+        where("timestamp", ">=", startOfDay.getTime())
       );
       const querySnapshot = await getDocs(q);
-      const res: RowData[] = []
+      const res: RowData[] = [];
       querySnapshot.forEach((doc) => {
-        console.log('datossssss', doc.data())
-       
-        res.push(doc.data() as RowData)
-  
-  
+        console.log("datossssss", doc.data());
+
+        res.push(doc.data() as RowData);
       });
-      setLavados(res)
+      setLavados(res);
     } catch (error) {
-      console.log(error)
-    }finally{
-      setLoader(false)
+      console.log(error);
+    } finally {
+      setLoader(false);
     }
   };
   useEffect(() => {
@@ -392,285 +375,394 @@ function App() {
   }, [startDate]);
 
   useEffect(() => {
-    if (search == '') {
+    if (search == "") {
       obtenerData();
     }
-  }, [search])
+  }, [search]);
   const getDate = (date: number) => {
-    return moment(date).format('MMMM D, YYYY h:mm A')
-  }
+    return moment(date).format("MMMM D, YYYY h:mm A");
+  };
   return (
     <>
-    {
-      loader ?<div style={{width:'90vh', height:'90vh', display:'flex',
-        justifyContent:'center',
-        alignItems:'center'
-      }}>
-        <CircularProgress color="primary" />
-      </div>:     <div>
-      <div className="App">
-        <Box sx={{ flexGrow: 1 }}>
-
-          <Grid container spacing={2}>
-
-            <Grid  size={{ xs: 12, md: 4 }}>
-              <Stack direction="row" alignItems="center" spacing={1}>
-                <LocalCarWashIcon sx={{ fontSize: 30 }} color='info'/>
-                <Typography variant="h6" fontWeight={'bold'} color='primary'>
-                  Imperio Wash 777
-                </Typography>
-              </Stack>
-            </Grid>
-            <Grid size={{ xs: 12, md: 4 }} >
-
-              <Box
-
-
-                sx={{ display: 'flex', alignItems: 'center' }}
-
-              >
-                
-<OutlinedInput
-    style={{marginBottom:15, marginRight:5}}
-    onChange={handleChange}
-    value={search}
-    placeholder="Buscar..."
-    onKeyPress={(e) => {
-      if (e.key === 'Enter') {
-        filterByLavadores();
-      }
-    }}
-            id="outlined-adornment-password"
-            type={'text'}
-            endAdornment={
-              <InputAdornment position="end">
-                <IconButton
-                onClick={filterByLavadores}
-                  aria-label="toggle password visibility"
-              
-                  edge="end"
-                >
-                  <SearchIcon />
-                </IconButton>
-              </InputAdornment>
-            }
-           
-            fullWidth
-          />
-               
-                {isSearching && lavados && !lavados.length ? (
-                  <Typography variant="caption" color="error">
-                    No se encontró ningún cliente con ese nombre
-                  </Typography>
-                ) : null}
-             
-
-                <label htmlFor="dateClick">
-
-                  <CalendarIcon  onClick={handleDateClick} style={{color:'#5ea0ff', fontSize:35}}/>
-                  <input type="date" name="dateClick" id="dateClick" onChange={handleInputChange} />
-                </label>
-              </Box>
-
-            </Grid>
-
-
-
-            {!mobileView && <Grid size={{ xs: 12, md: 4 }} >
-              <Button sx={{ minWidth: 100, maxWidth: 280, marginBottom: 2, }}
-                onClick={handleOpen}
-                variant="outlined"
-                fullWidth
-                size={buttonSize}
-              >Registrar Cliente</Button>
-
-            </Grid>
-            }
-          </Grid>
-        </Box>
-
-      </div>
-
-      {mobileView &&
-      
-      <Button sx={{ marginBottom: 2, position: 'fixed', bottom: 0, right: 0, borderRadius:30 }}
-        onClick={handleOpen}
-        variant='contained'
-
-        size={buttonSize}
-      >+</Button>}
-      {!mobileView ?
-        <TableContainer component={Paper} sx={{}}>
-          <Table sx={{ minWidth: 700 }} aria-label="customized table">
-            <TableHead>
-              <TableRow>
-                <StyledTableCell >Fecha </StyledTableCell>
-                <StyledTableCell align="right">Cliente</StyledTableCell>
-                <StyledTableCell align="right">Lavador</StyledTableCell>
-                <StyledTableCell align="right">Servicio de Lavado</StyledTableCell>
-                <StyledTableCell align="right">Precio</StyledTableCell>
-                <StyledTableCell align="right">Vehiculo </StyledTableCell>
-
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {lavados && lavados.length > 0   ? (
-                lavados.map((row) => (
-                  <StyledTableRow key={row.cliente}>
-                    <StyledTableCell >{moment(row.timestamp).format('MMMM D, YYYY  h:mm A') ?? 'Sin fecha'}</StyledTableCell>
-                    <StyledTableCell align="right">{row.cliente}</StyledTableCell>
-                    <StyledTableCell align="right">{row.lavadores}</StyledTableCell>
-                    <StyledTableCell align="right">{row.tipoLavado.slice(0, 1).toLocaleUpperCase() + row.tipoLavado.substring(1)}</StyledTableCell>
-                    <StyledTableCell align="right">${handleValueLavado(row.tipoLavado)}</StyledTableCell>
-
-                    <StyledTableCell align="right">{row.tipoVehiculo}</StyledTableCell>
-                  </StyledTableRow>
-                ))
-              ) : (
-                <StyledTableRow>
-                  <TableCell colSpan={5} align="center">
-                    <Typography variant="body2">Sin datos cargados</Typography>
-                  </TableCell>
-                </StyledTableRow>)}
-            </TableBody>
-          </Table>
-
-        </TableContainer> : <>
-          {lavados && lavados.map(row =>
-            <Card sx={{ marginBottom: 2 }}>
-
-              <CardHeader
-                title={row.cliente}
-                style={{
-                  padding: 15,
-                  background: 'black',
-                  color: 'white'
-                }}
-                subheader={
-                  <div style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                  <Typography
-                    variant="subtitle2"
-                    color="inherit"
-                    style={{ color: 'white' }}
-                  >
-                    {getDate(row.timestamp)}
-                
-
-                  </Typography>
-                      <Chip 
-                      sx={{backgroundColor:'white', color:'black', fontWeight:'bold'}}
-                        variant="filled"
-                        color={'success'}
-                   
-                      icon={<FaceIcon />} label={row.lavadores} />
-                      </div>
-                  //   <Typography variant="body2">
-                  //   <Stack direction="row" spacing={1}>
-    
-                  //   </Stack>
-    
-                  // </Typography>
-                }
-               
-              
-                
-
-              />
-              <CardContent style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '8px',
-                paddingTop: 0,
-                marginTop: 10
-              }}
-              >
-               
-                <Box display="flex" alignItems="center" sx={{ gap: 1 }}>
-                  <WaterDropIcon sx={{ fontSize: 14 }} color='primary'/>
-                  <Typography variant="body2">Tipo de lavado:</Typography>
-                  {tipoLavado && (
-                    <Chip
-                    size='small'
-                      label={row.tipoLavado.slice(0, 1).toLocaleUpperCase() + row.tipoLavado.substring(1)}
-                      color={row.tipoLavado === 'basico' ? 'primary' : row.tipoLavado === 'medio' ? 'secondary' : row.tipoLavado === 'fuerte' ? 'success' : 'default'}
-                      variant="outlined"
+      {loader ? (
+        <div
+          style={{
+            width: "90vh",
+            height: "90vh",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <CircularProgress color="primary" />
+        </div>
+      ) : (
+        <div>
+          <div className="App">
+            <Box sx={{ flexGrow: 1 }}>
+              <Grid container spacing={2}>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Stack direction="row" alignItems="center" spacing={1}>
+                    <LocalCarWashIcon sx={{ fontSize: 30 }} color="info" />
+                    <Typography
+                      variant="h6"
+                      fontWeight={"bold"}
+                      color="primary"
+                    >
+                      Imperio Wash 777
+                    </Typography>
+                  </Stack>
+                </Grid>
+                <Grid size={{ xs: 12, md: 4 }}>
+                  <Box sx={{ display: "flex", alignItems: "center" }}>
+                    <OutlinedInput
+                      style={{ marginBottom: 15, marginRight: 5 }}
+                      onChange={handleChange}
+                      value={search}
+                      placeholder="Buscar..."
+                      onKeyPress={(e) => {
+                        if (e.key === "Enter") {
+                          filterByLavadores();
+                        }
+                      }}
+                      id="outlined-adornment-password"
+                      type={"text"}
+                      endAdornment={
+                        <InputAdornment position="end">
+                          <IconButton
+                            onClick={filterByLavadores}
+                            aria-label="toggle password visibility"
+                            edge="end"
+                          >
+                            <SearchIcon />
+                          </IconButton>
+                        </InputAdornment>
+                      }
+                      fullWidth
                     />
-                  )}
-                </Box>
-                <Box display="flex" alignItems="center" sx={{ gap: 1 }}>
-                  <AttachMoneyIcon sx={{ fontSize: 16 }} color='success'/>
-                  <Typography variant="body2">Precio: $<b>{handleValueLavado(row.tipoLavado).toFixed(2)}</b>
 
-                  </Typography>
-                </Box>
-                <Box display="flex" alignItems="center" sx={{ gap: 1 }}>
-                  <LocalCarWashIcon sx={{ fontSize: 14 }} />
-                  <Typography variant="body2">Tipo de vehículo: <b>{row.tipoVehiculo}</b></Typography>
-                </Box>
+                    {isSearching && lavados && !lavados.length ? (
+                      <Typography variant="caption" color="error">
+                        No se encontró ningún cliente con ese nombre
+                      </Typography>
+                    ) : null}
 
+                    <label htmlFor="dateClick">
+                  
+                        <CalendarIcon
+                         onClick={handleOpenModalDate}
+                          style={{ color: "#5ea0ff", fontSize: 35 }}
+                        />
+                      
 
+                      <LocalizationProvider dateAdapter={AdapterMoment}>
+                        <DatePicker
+                          open={openModalDate}
+                          // onOpenChange={(newOpen: boolean) => setOpenModalDate(newOpen)}
+                          onClose={handleClose}
+                          // eslint-disable-next-line
+                          // @ts-ignore
+                          onChange={(e: string) => handleInputChange(e)}
+                          sx={{ display: "none" }}
+                        />
+                      </LocalizationProvider>
+                    </label>
+                  </Box>
+                </Grid>
 
-              </CardContent>
-            </Card>)}
-        </>
-      }
+                {!mobileView && (
+                  <Grid size={{ xs: 12, md: 4 }}>
+                    <Button
+                      sx={{ minWidth: 100, maxWidth: 280, marginBottom: 2 }}
+                      onClick={handleOpen}
+                      variant="outlined"
+                      fullWidth
+                      size={buttonSize}
+                    >
+                      Registrar Cliente
+                    </Button>
+                  </Grid>
+                )}
+              </Grid>
+            </Box>
+          </div>
 
-   
-      <Typography variant="h6" gutterBottom>Total de precios: <b>${lavados && lavados.reduce((total, row) => total + handleValueLavado(row.tipoLavado), 0).toFixed(2)}</b></Typography>
-
-      <Modal
-        open={open}
-        onClose={handleCloseModal}
-        aria-labelledby="modal-modal-title"
-        aria-describedby="modal-modal-description"
-
-      >
-        <Box sx={style} >
-          <Typography id="modal-modal-title" variant="h6" fontWeight={'bold'} component="h2">
-            Nuevo Registro de Lavado!
-          </Typography>
-          <Typography id="modal-modal-description"  color='gray' sx={{ mt: 2 }}>
-            Datos básicos
-          </Typography>
-
-          <form onSubmit={createDoc} >
-            <Stack spacing={2} mb={2} >
-              <TextField onChange={(e) => setData({ ...data, cliente: e.target.value })} label="Cliente" />
-              <FormControl fullWidth>
-                <InputLabel>Seleccione un vehículo</InputLabel>
-                <Select onChange={(e: SelectChangeEvent) => setData({ ...data, tipoVehiculo: e.target.value })} placeholder='Tipo de vehiculo'>
-                  {tipoVehiculo.map((item) => <MenuItem value={item}>{item}</MenuItem>)}
-                </Select>
-              </FormControl>
-              <FormControl fullWidth>
-                <InputLabel>Seleccione un servicio</InputLabel>
-                <Select onChange={(e: SelectChangeEvent) => setData({ ...data, tipoLavado: e.target.value })} placeholder='Tipo de lavado'>
-                  {tipoLavado.map((item, index) => <MenuItem key={index} value={item.type}>{item.type}</MenuItem>)}
-                </Select>
-              </FormControl>
-
-
-              <FormControl fullWidth>
-                <InputLabel>Lavador</InputLabel>
-                <Select onChange={(e: SelectChangeEvent) => setData({ ...data, lavadores: e.target.value })} placeholder='lavadores'>
-                  {lavadores.map(item => <MenuItem value={item}>{item}</MenuItem>)}
-                </Select>
-              </FormControl>
-
-
-            </Stack>
-            <Button disabled={disabledHandle()} type="submit" variant="contained" color="primary" fullWidth>
-              Guardar
+          {mobileView && (
+            <Button
+              sx={{
+                marginBottom: 2,
+                position: "fixed",
+                bottom: 0,
+                right: 0,
+                borderRadius: 30,
+              }}
+              onClick={handleOpen}
+              variant="contained"
+              size={buttonSize}
+            >
+              +
             </Button>
-          </form>
+          )}
+          {!mobileView ? (
+            <TableContainer component={Paper} sx={{}}>
+              <Table sx={{ minWidth: 700 }} aria-label="customized table">
+                <TableHead>
+                  <TableRow>
+                    <StyledTableCell>Fecha </StyledTableCell>
+                    <StyledTableCell align="right">Cliente</StyledTableCell>
+                    <StyledTableCell align="right">Lavador</StyledTableCell>
+                    <StyledTableCell align="right">
+                      Servicio de Lavado
+                    </StyledTableCell>
+                    <StyledTableCell align="right">Precio</StyledTableCell>
+                    <StyledTableCell align="right">Vehiculo </StyledTableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {lavados && lavados.length > 0 ? (
+                    lavados.map((row) => (
+                      <StyledTableRow key={row.cliente}>
+                        <StyledTableCell>
+                          {moment(row.timestamp).format(
+                            "MMMM D, YYYY  h:mm A"
+                          ) ?? "Sin fecha"}
+                        </StyledTableCell>
+                        <StyledTableCell align="right">
+                          {row.cliente}
+                        </StyledTableCell>
+                        <StyledTableCell align="right">
+                          {row.lavadores}
+                        </StyledTableCell>
+                        <StyledTableCell align="right">
+                          {row.tipoLavado.slice(0, 1).toLocaleUpperCase() +
+                            row.tipoLavado.substring(1)}
+                        </StyledTableCell>
+                        <StyledTableCell align="right">
+                          ${handleValueLavado(row.tipoLavado)}
+                        </StyledTableCell>
 
-        </Box>
-      </Modal>
-    </div>
-    }
+                        <StyledTableCell align="right">
+                          {row.tipoVehiculo}
+                        </StyledTableCell>
+                      </StyledTableRow>
+                    ))
+                  ) : (
+                    <StyledTableRow>
+                      <TableCell colSpan={5} align="center">
+                        <Typography variant="body2">
+                          Sin datos cargados
+                        </Typography>
+                      </TableCell>
+                    </StyledTableRow>
+                  )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          ) : (
+            <>
+              {lavados &&
+                lavados.map((row) => (
+                  <Card sx={{ marginBottom: 2 }}>
+                    <CardHeader
+                      title={row.cliente}
+                      style={{
+                        padding: 15,
+                        background: "black",
+                        color: "white",
+                      }}
+                      subheader={
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            alignItems: "center",
+                          }}
+                        >
+                          <Typography
+                            variant="subtitle2"
+                            color="inherit"
+                            style={{ color: "white" }}
+                          >
+                            {getDate(row.timestamp)}
+                          </Typography>
+                          <Chip
+                            sx={{
+                              backgroundColor: "white",
+                              color: "black",
+                              fontWeight: "bold",
+                            }}
+                            variant="filled"
+                            color={"success"}
+                            icon={<FaceIcon />}
+                            label={row.lavadores}
+                          />
+                        </div>
+                        //   <Typography variant="body2">
+                        //   <Stack direction="row" spacing={1}>
 
+                        //   </Stack>
+
+                        // </Typography>
+                      }
+                    />
+                    <CardContent
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: "8px",
+                        paddingTop: 0,
+                        marginTop: 10,
+                      }}
+                    >
+                      <Box display="flex" alignItems="center" sx={{ gap: 1 }}>
+                        <WaterDropIcon sx={{ fontSize: 14 }} color="primary" />
+                        <Typography variant="body2">Tipo de lavado:</Typography>
+                        {tipoLavado && (
+                          <Chip
+                            size="small"
+                            label={
+                              row.tipoLavado.slice(0, 1).toLocaleUpperCase() +
+                              row.tipoLavado.substring(1)
+                            }
+                            color={
+                              row.tipoLavado === "basico"
+                                ? "primary"
+                                : row.tipoLavado === "medio"
+                                ? "secondary"
+                                : row.tipoLavado === "fuerte"
+                                ? "success"
+                                : "default"
+                            }
+                            variant="outlined"
+                          />
+                        )}
+                      </Box>
+                      <Box display="flex" alignItems="center" sx={{ gap: 1 }}>
+                        <AttachMoneyIcon
+                          sx={{ fontSize: 16 }}
+                          color="success"
+                        />
+                        <Typography variant="body2">
+                          Precio: $
+                          <b>{handleValueLavado(row.tipoLavado).toFixed(2)}</b>
+                        </Typography>
+                      </Box>
+                      <Box display="flex" alignItems="center" sx={{ gap: 1 }}>
+                        <LocalCarWashIcon sx={{ fontSize: 14 }} />
+                        <Typography variant="body2">
+                          Tipo de vehículo: <b>{row.tipoVehiculo}</b>
+                        </Typography>
+                      </Box>
+                    </CardContent>
+                  </Card>
+                ))}
+            </>
+          )}
+
+          <Typography variant="h6" gutterBottom>
+            Total de precios:{" "}
+            <b>
+              $
+              {lavados &&
+                lavados
+                  .reduce(
+                    (total, row) => total + handleValueLavado(row.tipoLavado),
+                    0
+                  )
+                  .toFixed(2)}
+            </b>
+          </Typography>
+
+          <Modal
+            open={open}
+            onClose={handleCloseModal}
+            aria-labelledby="modal-modal-title"
+            aria-describedby="modal-modal-description"
+          >
+            <Box sx={style}>
+              <Typography
+                id="modal-modal-title"
+                variant="h6"
+                fontWeight={"bold"}
+                component="h2"
+              >
+                Nuevo Registro de Lavado!
+              </Typography>
+              <Typography
+                id="modal-modal-description"
+                color="gray"
+                sx={{ mt: 2 }}
+              >
+                Datos básicos
+              </Typography>
+
+              <form onSubmit={createDoc}>
+                <Stack spacing={2} mb={2}>
+                  <TextField
+                    onChange={(e) =>
+                      setData({ ...data, cliente: e.target.value })
+                    }
+                    label="Cliente"
+                  />
+                  <FormControl fullWidth>
+                    <InputLabel>Seleccione un vehículo</InputLabel>
+                    <Select
+                      onChange={(e: SelectChangeEvent) =>
+                        setData({ ...data, tipoVehiculo: e.target.value })
+                      }
+                      placeholder="Tipo de vehiculo"
+                    >
+                      {tipoVehiculo.map((item) => (
+                        <MenuItem value={item}>{item}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormControl fullWidth>
+                    <InputLabel>Seleccione un servicio</InputLabel>
+                    <Select
+                      onChange={(e: SelectChangeEvent) =>
+                        setData({ ...data, tipoLavado: e.target.value })
+                      }
+                      placeholder="Tipo de lavado"
+                    >
+                      {tipoLavado.map((item, index) => (
+                        <MenuItem key={index} value={item.type}>
+                          {item.type}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+
+                  <FormControl fullWidth>
+                    <InputLabel>Lavador</InputLabel>
+                    <Select
+                      onChange={(e: SelectChangeEvent) =>
+                        setData({ ...data, lavadores: e.target.value })
+                      }
+                      placeholder="lavadores"
+                    >
+                      {lavadores.map((item) => (
+                        <MenuItem value={item}>{item}</MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                </Stack>
+                <Button
+                  disabled={disabledHandle()}
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  fullWidth
+                >
+                  Guardar
+                </Button>
+              </form>
+            </Box>
+          </Modal>
+        </div>
+      )}
     </>
-  )
+  );
 }
 
-export default App
+export default App;
