@@ -1,0 +1,12 @@
+specVersion: "v1beta"
+serviceId: "mi-lavado"
+location: "us-central1"
+schema:
+  source: "./schema"
+  datasource:
+    postgresql:
+      database: "fdcdb"
+      cloudSql:
+        instanceId: "mi-lavado-fdc"
+      # schemaValidation: "COMPATIBLE"
+connectorDirs: ["./connector"]
