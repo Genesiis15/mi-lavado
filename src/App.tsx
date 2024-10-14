@@ -1,5 +1,16 @@
-import React, { useEffect, useState } from 'react';
-import './App.css'
+import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import FaceIcon from '@mui/icons-material/Face';
+import LocalCarWashIcon from '@mui/icons-material/LocalCarWash';
+import SearchIcon from '@mui/icons-material/Search';
+import WaterDropIcon from '@mui/icons-material/WaterDrop';
+import { CircularProgress, InputAdornment, OutlinedInput, useMediaQuery } from '@mui/material';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Chip from '@mui/material/Chip';
+import Modal from '@mui/material/Modal';
+import Paper from '@mui/material/Paper';
+import { SelectChangeEvent } from '@mui/material/Select';
+import Stack from '@mui/material/Stack';
 import { styled } from '@mui/material/styles';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -7,42 +18,27 @@ import TableCell, { tableCellClasses } from '@mui/material/TableCell';
 import TableContainer from '@mui/material/TableContainer';
 import TableHead from '@mui/material/TableHead';
 import TableRow from '@mui/material/TableRow';
-import Paper from '@mui/material/Paper';
-import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Typography from '@mui/material/Typography';
-import Modal from '@mui/material/Modal';
-import { db } from './firebase';
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
-import { SelectChangeEvent } from '@mui/material/Select';
 import moment from 'moment';
-import SearchIcon from '@mui/icons-material/Search';
-import Chip from '@mui/material/Chip';
-import Stack from '@mui/material/Stack';
-import FaceIcon from '@mui/icons-material/Face';
-import WaterDropIcon from '@mui/icons-material/WaterDrop';
-import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import LocalCarWashIcon from '@mui/icons-material/LocalCarWash';
-import { CircularProgress, FilledInput, InputAdornment, OutlinedInput, useMediaQuery } from '@mui/material';
+import React, { ChangeEvent, useEffect, useState } from 'react';
+import './App.css';
+import { db } from './firebase';
 
 
 import {
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  InputBase,
-  IconButton,
   Card,
   CardContent,
   CardHeader,
-
+  FormControl,
+  IconButton,
+  InputLabel,
+  MenuItem,
+  Select,
+  TextField,
 } from '@mui/material';
 import Grid from '@mui/material/Grid2';
-import { DatePicker } from '@mui/lab';
-import { CalendarIcon, LocalizationProvider } from '@mui/x-date-pickers';
-import { TextFields } from '@mui/icons-material';
+import { CalendarIcon } from '@mui/x-date-pickers';
 
 interface RowData {
   cliente: string;
@@ -50,6 +46,14 @@ interface RowData {
   tipoLavado: string;
   tipoVehiculo: string;
   timestamp: number;
+}
+interface RowDataId {
+  cliente: string;
+  lavadores: string;
+  tipoLavado: string;
+  tipoVehiculo: string;
+  timestamp: number;
+  id:string
 }
 
 interface TipoLavado {
@@ -62,7 +66,9 @@ type tipoVehiculo = string
 type lavadores = string
 
 
-
+interface DatePickerInput extends HTMLElement {
+  showPicker(): void;
+}
 
 
 
@@ -71,7 +77,6 @@ function App() {
   const mobileView = useMediaQuery('(max-width: 600px)');
   const buttonSize = mobileView ? 'small' : 'medium';
   const modalSize = mobileView ? '300px' : '500px';
-
   const [open, setOpen] = useState(false);
   const [tipoLavado, setTipoLavado] = useState<TipoLavado[]>([]);
   const [tipoVehiculo, setTipoVehiculo] = useState<tipoVehiculo[]>([]);
@@ -83,11 +88,11 @@ function App() {
     tipoVehiculo: '',
     timestamp: Date.now()
   });
-  const [lavados, setLavados] = useState<RowData[] | null>(null);
+  const [lavados, setLavados] = useState<RowData[] | RowDataId[] |null>(null);
   const [search, setSearch] = useState('');
   const [isSearching, setIsSearching] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(new Date());
-  const [endDate, setEndDate] = useState<Date | null>(new Date())
+ 
   const [loader, setLoader] = useState(false);
 
 
@@ -139,35 +144,6 @@ function App() {
     return true
   }
 
-  const generateSpinnerCSS = () => `
-  .spinner {
-    width: 56px;
-    height: 56px;
-    display: grid;
-  }
-
-  .spinner::before,
-  .spinner::after {
-    content: "";
-    grid-area: 1/1;
-    border: 9px solid;
-    border-radius: 50%;
-    border-color: #474bff #474bff #0000 #0000;
-    mix-blend-mode: darken;
-    animation: spinner-plncf9 1s infinite linear;
-  }
-
-  .spinner::after {
-    border-color: #0000 #0000 #dbdcef #dbdcef;
-    animation-direction: reverse;
-  }
-
-  @keyframes spinner-plncf9 {
-    100% {
-      transform: rotate(1turn);
-    }
-  }
-`;
 
 
   const filterByDate = async () => {
@@ -185,7 +161,7 @@ function App() {
 
       try {
         startDate.setHours(0, 0, 0, 0);
-        endDate.setHours(23, 59, 59, 999);
+   
         setLoader(true)
         const q = query(
           collection(db, "lavado"),
@@ -193,13 +169,14 @@ function App() {
           where("timestamp", "<=", endDateNew.getTime())
         );
         const querySnapshot = await getDocs(q);
-        const filteredResults = querySnapshot.docs.map(doc => {
+        const filteredResults:RowDataId[] = [];
+        querySnapshot.docs.map(doc => {
           console.log(doc.data());
-
-          return {
-            ...doc.data(),
+          const dataL = doc.data() as RowData
+          filteredResults.push({
+            ...dataL,
             id: doc.id,
-          }
+          });
         });
         setLavados(filteredResults);
         setIsSearching(false);
@@ -236,7 +213,15 @@ function App() {
           ...data,
           timestamp: Date.now(),
         });
-        setLavados(prevLavados => [{ ...data, timestamp: Date.now() }, ...prevLavados]);
+        if(lavados){
+
+          setLavados([{ ...data, timestamp: Date.now() },...lavados])
+        }
+        // setLavados(prevLavados => {
+        //   if(prevLavados){
+        //    return[{ ...data, timestamp: Date.now() }, ...prevLavados]
+        //   }
+        // });
         console.log("Document written with ID: ", docRef.id);
         handleCloseModal();
      
@@ -274,19 +259,20 @@ function App() {
     }
     return 0
   };
-  const handleDateClick = (e) => {
-    const input = document.getElementById('dateClick');
+  const handleDateClick = () => {
+    const input = document.getElementById('dateClick') as DatePickerInput;
+
     if (input) {
       // Simular un click en el input
       input.click();
-
+  
       // Si el navegador soporta showPicker(), usarlo
       if ('showPicker' in input) {
         input.showPicker();
       }
     }
   };
-  const handleInputChange = (e) => {
+  const handleInputChange = (e:ChangeEvent<HTMLInputElement>) => {
     console.log(e.target.value);
 
     const date = new Date(new Date(e.target.value).getTime() + 86400000);
@@ -313,12 +299,13 @@ function App() {
         return;
       }
 
-      const filteredResults = [];
+      const filteredResults:RowDataId[] = [];
 
       querySnapshot.forEach((doc) => {
-        console.log(doc.data())
+        console.log(doc.data() as RowData)
+        const dataL = doc.data() as RowData
         filteredResults.push({
-          ...doc.data(),
+          ...dataL,
           id: doc.id,
         });
       });
@@ -378,13 +365,11 @@ function App() {
       const res: RowData[] = []
       querySnapshot.forEach((doc) => {
         console.log('datossssss', doc.data())
-  
-  
-        res.push(doc.data())
+       
+        res.push(doc.data() as RowData)
   
   
       });
-      res.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
       setLavados(res)
     } catch (error) {
       console.log(error)
@@ -482,7 +467,7 @@ function App() {
 
                 <label htmlFor="dateClick">
 
-                  <CalendarIcon  onClick={(e) => handleDateClick(e)} style={{color:'#5ea0ff', fontSize:35}}/>
+                  <CalendarIcon  onClick={handleDateClick} style={{color:'#5ea0ff', fontSize:35}}/>
                   <input type="date" name="dateClick" id="dateClick" onChange={handleInputChange} style={{ display: 'none' }} />
                 </label>
               </Box>
