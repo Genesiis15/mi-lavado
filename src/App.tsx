@@ -29,6 +29,7 @@ import moment from "moment";
 import React, { useEffect, useState } from "react";
 import "./App.css";
 import { db } from "./firebase";
+import axios from 'axios';
 
 import {
   Card,
@@ -53,14 +54,23 @@ interface RowData {
   cliente: string;
   lavadores: string;
   tipoLavado: string;
-  tipoVehiculo: string;
+  opcionAdicional:string;
+  formaPago: string;
   timestamp: number;
+  price: number
 }
+
+interface PriceData {
+  price: number;
+  convertedPrice: number;
+}
+
 interface RowDataId {
   cliente: string;
   lavadores: string;
   tipoLavado: string;
-  tipoVehiculo: string;
+
+  formaPago: string;
   timestamp: number;
   id: string;
 }
@@ -70,28 +80,47 @@ interface TipoLavado {
   value: string;
 }
 
-type tipoVehiculo = string;
+interface Servicio {
+  type: string;
+  opcionesAdicionales?: OpcionesAdicionales[];
+}
+
+interface OpcionesAdicionales {
+  type: string;
+  descripcion: string;
+}
+
+
+
 
 type lavadores = string;
 
 
 
 function App() {
-  // const mobileView = useMediaQuery('(max-width: 768px)');
   const mobileView = useMediaQuery("(max-width: 600px)");
   const buttonSize = mobileView ? "small" : "medium";
   const modalSize = mobileView ? "300px" : "500px";
   const [open, setOpen] = useState(false);
   const [tipoLavado, setTipoLavado] = useState<TipoLavado[]>([]);
-  const [tipoVehiculo, setTipoVehiculo] = useState<tipoVehiculo[]>([]);
   const [lavadores, setLavadores] = useState<lavadores[]>([]);
   const [data, setData] = useState<RowData>({
     cliente: "",
     lavadores: "",
     tipoLavado: "",
-    tipoVehiculo: "",
+    formaPago: "",
     timestamp: Date.now(),
+    price: 0,
+    opcionAdicional:''
   });
+  const [priceData, setPriceData] = useState<PriceData>({
+    price: 0,
+    convertedPrice: 0,
+  });
+  const [servicios, setServicios] = useState<Servicio[]>([]);
+  const [opcionesAdicionales, setOpcionesAdicionales] = useState<OpcionesAdicionales[]>([]);
+
+  const [dolarRate, setDolarRate] = useState(null);
   const [lavados, setLavados] = useState<RowData[] | RowDataId[] | null>(null);
   const [search, setSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -116,6 +145,7 @@ function App() {
     setSearch(event.target.value);
     setIsSearching(true);
   };
+
 
   const style = {
     position: "absolute" as const,
@@ -151,8 +181,7 @@ function App() {
     if (
       data.cliente.length > 0 &&
       data.lavadores.length > 0 &&
-      data.tipoLavado.length > 0 &&
-      data.tipoVehiculo.length > 0
+      data.tipoLavado.length > 0
     ) {
       return false;
     }
@@ -167,10 +196,7 @@ function App() {
       endDateNew.setHours(23, 59, 59, 999);
       const endOfDay = new Date(startOfDay);
       endOfDay.setHours(23, 59, 59, 999);
-      // if (!startDate || !endDate) {
-      //   console.log('No se han seleccionado fechas válidas');
-      //   return;
-      // }
+
 
       try {
         startDate.setHours(0, 0, 0, 0);
@@ -212,18 +238,11 @@ function App() {
     if (
       data.cliente.length > 0 &&
       data.lavadores.length > 0 &&
-      data.tipoLavado.length > 0 &&
-      data.tipoVehiculo.length > 0
-    ) {
-      console.log("entro", data);
+      data.tipoLavado.length > 0
 
-      // const docRef = await addDoc(collection(db, "lavado"), {
-      //   ...data,
-      //   timestamp: Date.now(),
-      // });
-      // setLavados(prevLavados => [{ ...data, timestamp: Date.now() }, ...prevLavados]);
-      // console.log("Document written with ID: ", docRef.id);
-      // handleCloseModal();
+    ) {
+
+
     }
     try {
       const docRef = await addDoc(collection(db, "lavado"), {
@@ -233,11 +252,6 @@ function App() {
       if (lavados) {
         setLavados([{ ...data, timestamp: Date.now() }, ...lavados]);
       }
-      // setLavados(prevLavados => {
-      //   if(prevLavados){
-      //    return[{ ...data, timestamp: Date.now() }, ...prevLavados]
-      //   }
-      // });
       console.log("Document written with ID: ", docRef.id);
       handleCloseModal();
     } catch (error: unknown) {
@@ -253,25 +267,107 @@ function App() {
     setOpen(false);
     setData({
       cliente: "",
-      tipoVehiculo: "",
-      tipoLavado: "Basico",
+      // tipoVehiculo: "",
+      tipoLavado: "",
       lavadores: "",
+      formaPago: "",
       timestamp: Date.now(),
+      price:0,
+      opcionAdicional:''
     });
   };
 
   const handleValueLavado = (value: string) => {
-    if (value === "basico") {
-      return 10;
+    if (value === "Carros") {
+      return 10
     }
-    if (value === "fuerte") {
-      return 20;
+     if (value === "Rust Peq") {
+      return 11
     }
-    if (value === "medio") {
+    if (value === "Rust Grande") {
+      return 12;
+    }
+    if (value === "Vans") {
       return 15;
     }
-    return 0;
+    if (value === "Motor") {
+      return 10;
+    }
+    if (value === "Formula Marina") {
+      return 5;
+    }
   };
+  const handleValueLavadoModal = (value: string) => {
+    console.log(value);
+ if(value === "Formula Marina" || value === "Motor"){
+  if (value === "Formula Marina") {
+    if (data.tipoLavado === "Carros") {
+      console.log('Formula Marina lavo carro');
+      
+      setData({ ...data, tipoLavado: value, price:15, opcionAdicional:value })
+
+    }
+    if (data.tipoLavado === "Vans") {
+      console.log('Formula Marina lavo vans');
+
+      setData({ ...data, tipoLavado: value, price:20, opcionAdicional:value })
+
+    }
+    if (data.tipoLavado === "Rust Peq") {
+      setData({ ...data, tipoLavado: value, price:16, opcionAdicional:value })
+
+    }
+    if (data.tipoLavado === "Rust Grande") {
+      setData({ ...data, tipoLavado: value, price:17, opcionAdicional:value })
+
+    }
+    // setData({...data, price: data.price + 5, opcionAdicional:value})
+  }
+  if (value === "Motor") {
+    if (data.tipoLavado === "Carros") {
+      setData({ ...data, tipoLavado: value, price:25, opcionAdicional:value })
+
+    }
+    if (data.tipoLavado === "Vans") {
+      setData({ ...data, tipoLavado: value, price:30, opcionAdicional:value })
+
+    }
+    if (data.tipoLavado === "Rust Peq") {
+      setData({ ...data, tipoLavado: value, price:26, opcionAdicional:value })
+
+    }
+    if (data.tipoLavado === "Rust Grande") {
+      setData({ ...data, tipoLavado: value, price:27, opcionAdicional:value })
+
+    }
+  }
+
+ }else{
+  
+  if (value === "Carros") {
+    setData({ ...data, tipoLavado: value, price:10, opcionAdicional:'' })
+
+  }
+   if (value === "Rust Peq") {
+   
+    setData({ ...data, tipoLavado: value, price:11, opcionAdicional:'' })
+  
+  }
+  if (value === "Rust Grande") {
+    setData({ ...data, tipoLavado: value, price:12, opcionAdicional:'' })
+    return 12;
+  }
+  if (value === "Vans") {
+    setData({ ...data, tipoLavado: value, price:15, opcionAdicional:'' })
+    return 15;
+  }
+ }
+    
+
+   
+   
+  };
+
 
   const handleInputChange = (e: string) => {
     console.log(e);
@@ -281,7 +377,12 @@ function App() {
 
     setStartDate(date);
     setOpenModalDate(false);
+
+
   };
+
+
+
 
   async function filterByLavadores() {
     try {
@@ -316,7 +417,6 @@ function App() {
       setLoader(false);
     }
 
-    // return filteredResults.slice(0, limit);
   }
   const obtenerDatos = async () => {
     const querySnapshot = await getDocs(collection(db, "tipoLavado"));
@@ -325,12 +425,12 @@ function App() {
     });
   };
 
-  const obtenerDatosVehiculo = async () => {
-    const querySnapshot = await getDocs(collection(db, "tipoVehiculo"));
-    querySnapshot.forEach((doc) => {
-      setTipoVehiculo(doc.data().vehiculos);
-    });
-  };
+  // const obtenerDatosVehiculo = async () => {
+  //   const querySnapshot = await getDocs(collection(db, "tipoVehiculo"));
+  //   querySnapshot.forEach((doc) => {
+  //     setTipoVehiculo(doc.data().vehiculos);
+  //   });
+  // };
   const obtenerDatosLabadores = async () => {
     const querySnapshot = await getDocs(collection(db, "lavadores"));
     querySnapshot.forEach((doc) => {
@@ -363,10 +463,42 @@ function App() {
   useEffect(() => {
     filterByDate();
     obtenerDatos();
-    obtenerDatosVehiculo();
+    // obtenerDatosVehiculo();
     obtenerDatosLabadores();
     obtenerData();
   }, []);
+  useEffect(() => {
+    async function fetchDolarRate() {
+      try {
+        const response = await axios.get('https://pydolarve.org/api/v1/dollar?page=dolartoday');
+
+
+        setDolarRate(response.data);
+      } catch (error) {
+        console.error('Error fetching dolar rate:', error);
+      }
+    }
+
+    fetchDolarRate();
+  }, []);
+  // useEffect(() => {
+  //   if (dolarRate && data.formaPago === 'Bolivares') {
+  //     const price = handleValueLavado(data.tipoLavado);
+  //     const convertedPrice = price / dolarRate.monitors.bcv.price;
+  //     setPriceData({ price, convertedPrice });
+  //   } else {
+  //     setPriceData({ price: handleValueLavado(data.tipoLavado), convertedPrice: 0 });
+  //   }
+  // }, [dolarRate]);
+
+  const handleInputChangee = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(e.target.value);
+    const date = new Date(new Date(e.target.value).getTime());
+    setStartDate(date);
+    setOpenModalDate(false);
+
+    setPriceData({ price: 0, convertedPrice: 0 });
+  };
 
   useEffect(() => {
     if (startDate) {
@@ -448,12 +580,12 @@ function App() {
                     ) : null}
 
                     <label htmlFor="dateClick">
-                  
-                        <CalendarIcon
-                         onClick={handleOpenModalDate}
-                          style={{ color: "#5ea0ff", fontSize: 35 }}
-                        />
-                      
+
+                      <CalendarIcon
+                        onClick={handleOpenModalDate}
+                        style={{ color: "#5ea0ff", fontSize: 35 }}
+                      />
+
 
                       <LocalizationProvider dateAdapter={AdapterMoment}>
                         <DatePicker
@@ -503,6 +635,14 @@ function App() {
               +
             </Button>
           )}
+          <Typography variant="h6" gutterBottom sx={{ textAlign: 'end' }}>
+            BCV:{" "}
+            <b>
+
+              Bs.F {dolarRate && dolarRate.monitors.bcv.price}
+
+            </b>
+          </Typography>
           {!mobileView ? (
             <TableContainer component={Paper} sx={{}}>
               <Table sx={{ minWidth: 700 }} aria-label="customized table">
@@ -514,8 +654,10 @@ function App() {
                     <StyledTableCell align="right">
                       Servicio de Lavado
                     </StyledTableCell>
+                    <StyledTableCell align="right">
+                      Método de pago
+                    </StyledTableCell>
                     <StyledTableCell align="right">Precio</StyledTableCell>
-                    <StyledTableCell align="right">Vehiculo </StyledTableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
@@ -538,12 +680,35 @@ function App() {
                             row.tipoLavado.substring(1)}
                         </StyledTableCell>
                         <StyledTableCell align="right">
-                          ${handleValueLavado(row.tipoLavado)}
+                          {/* {row.formaPago} */}
+                          <Chip
+                            size="small"
+                            label={
+                              row.formaPago.slice(0, 1).toLocaleUpperCase() +
+                              row.formaPago.substring(1)
+                            }
+                            color={
+                              row.formaPago === "Pago Móvil" || row.formaPago === "Bolívares" || row.formaPago === "Punto De Venta" ? 'primary'
+
+
+                                : row.formaPago === "Divisa"
+                                  ? "success"
+                                  : "default"
+                            }
+                            variant="outlined"
+                          />
+                        </StyledTableCell>
+                        <StyledTableCell align="right">
+
+                          <Typography variant="body2">
+
+                            <b>${handleValueLavado(row.tipoLavado)}</b> /
+
+                            <b> Bs.F{handleValueLavado(row.tipoLavado) * dolarRate.monitors.bcv.price.toFixed(0)}</b>
+                          </Typography>
                         </StyledTableCell>
 
-                        <StyledTableCell align="right">
-                          {row.tipoVehiculo}
-                        </StyledTableCell>
+
                       </StyledTableRow>
                     ))
                   ) : (
@@ -555,6 +720,8 @@ function App() {
                       </TableCell>
                     </StyledTableRow>
                   )}
+
+
                 </TableBody>
               </Table>
             </TableContainer>
@@ -597,12 +764,7 @@ function App() {
                             label={row.lavadores}
                           />
                         </div>
-                        //   <Typography variant="body2">
-                        //   <Stack direction="row" spacing={1}>
 
-                        //   </Stack>
-
-                        // </Typography>
                       }
                     />
                     <CardContent
@@ -625,13 +787,20 @@ function App() {
                               row.tipoLavado.substring(1)
                             }
                             color={
-                              row.tipoLavado === "basico"
+                              row.tipoLavado === "Rust Peq"
                                 ? "primary"
-                                : row.tipoLavado === "medio"
-                                ? "secondary"
-                                : row.tipoLavado === "fuerte"
-                                ? "success"
-                                : "default"
+                                : row.tipoLavado === "Rust Grande"
+                                  ? "primary"
+                                  : row.tipoLavado === "Vans"
+                                    ? "error"
+                                    : row.tipoLavado === "Motor"
+                                      ? "secondary"
+                                      : row.tipoLavado === "Formula Marina"
+                                        ? "error"
+
+                                        : row.tipoLavado === "Carros"
+                                          ? "warning"
+                                          : "default"
                             }
                             variant="outlined"
                           />
@@ -643,14 +812,17 @@ function App() {
                           color="success"
                         />
                         <Typography variant="body2">
-                          Precio: $
-                          <b>{handleValueLavado(row.tipoLavado).toFixed(2)}</b>
+
+                          <b>${handleValueLavado(row.tipoLavado)}</b> /
+
+                          <b> Bs.F{handleValueLavado(row.tipoLavado) * dolarRate.monitors.bcv.price}</b>
                         </Typography>
                       </Box>
+
                       <Box display="flex" alignItems="center" sx={{ gap: 1 }}>
                         <LocalCarWashIcon sx={{ fontSize: 14 }} />
                         <Typography variant="body2">
-                          Tipo de vehículo: <b>{row.tipoVehiculo}</b>
+                          Método de pago: <b>{row.formaPago}</b>
                         </Typography>
                       </Box>
                     </CardContent>
@@ -670,8 +842,24 @@ function App() {
                     0
                   )
                   .toFixed(2)}
+              <b style={{ marginRight: 5, marginLeft: 5 }}>/</b>
+
+              <b style={{ marginRight: 2, marginLeft: 2 }}>Bs.F </b>
+
+              {lavados && dolarRate !== null &&
+
+                lavados
+                  .reduce(
+                    (total, row) => total + handleValueLavado(row.tipoLavado),
+                    0
+                  )
+                  .toFixed(2) * dolarRate.monitors.bcv.price}
+
             </b>
           </Typography>
+
+
+
 
           <Modal
             open={open}
@@ -697,31 +885,18 @@ function App() {
               </Typography>
 
               <form onSubmit={createDoc}>
-                <Stack spacing={2} mb={2}>
+                <Stack spacing={2} mb={4}>
                   <TextField
                     onChange={(e) =>
                       setData({ ...data, cliente: e.target.value })
                     }
                     label="Cliente"
                   />
-                  <FormControl fullWidth>
-                    <InputLabel>Seleccione un vehículo</InputLabel>
-                    <Select
-                      onChange={(e: SelectChangeEvent) =>
-                        setData({ ...data, tipoVehiculo: e.target.value })
-                      }
-                      placeholder="Tipo de vehiculo"
-                    >
-                      {tipoVehiculo.map((item) => (
-                        <MenuItem value={item}>{item}</MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
+
                   <FormControl fullWidth>
                     <InputLabel>Seleccione un servicio</InputLabel>
                     <Select
-                      onChange={(e: SelectChangeEvent) =>
-                        setData({ ...data, tipoLavado: e.target.value })
+                      onChange={(e: SelectChangeEvent) => handleValueLavadoModal(e.target.value)
                       }
                       placeholder="Tipo de lavado"
                     >
@@ -732,6 +907,36 @@ function App() {
                       ))}
                     </Select>
                   </FormControl>
+                  <FormControl fullWidth>
+                  <InputLabel>Opciones adicionales</InputLabel>
+                  <Select
+                  value={data.opcionAdicional}
+      onChange={(e) => handleValueLavadoModal(e.target.value)}
+      placeholder="Seleccione una opción adicional"
+    >
+                      <MenuItem value="Motor">Motor</MenuItem>
+                      <MenuItem value="Formula Marina"> Formula Marina</MenuItem>
+                    </Select>
+                  </FormControl>
+                  
+  
+
+
+                  <FormControl fullWidth>
+                    <InputLabel>Método de pago</InputLabel>
+                    <Select
+                      onChange={(e: SelectChangeEvent) =>
+                        setData({ ...data, formaPago: e.target.value })
+                      }
+                      placeholder="Método de pago"
+                    >
+                      <MenuItem value="Punto De Venta">Punto de venta</MenuItem>
+                      <MenuItem value="Pago Móvil">Pago Móvil</MenuItem>
+                      <MenuItem value="Bolívares">Bolívares</MenuItem>
+                      <MenuItem value="Divisa">Divisa</MenuItem>
+                    </Select>
+                  </FormControl>
+
 
                   <FormControl fullWidth>
                     <InputLabel>Lavador</InputLabel>
@@ -746,7 +951,25 @@ function App() {
                       ))}
                     </Select>
                   </FormControl>
+
+
                 </Stack>
+                <Box display="flex" alignItems="center" sx={{ gap: 1 }}>
+                  <AttachMoneyIcon
+                    sx={{ fontSize: 16 }}
+                    color="success"
+                  />
+                  <Typography variant="body2">
+                    Precio: $
+                    <b>{data.price}</b>
+                    <b style={{ marginRight: 5, marginLeft: 5 }}>/</b>
+                    Bs.F: <b>{dolarRate && (data.price) * dolarRate.monitors.bcv.price}</b>
+                  </Typography>
+
+
+
+
+                </Box>
                 <Button
                   disabled={disabledHandle()}
                   type="submit"
