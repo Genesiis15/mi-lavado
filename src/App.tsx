@@ -60,17 +60,19 @@ interface RowData {
   price: number;
 }
 
-
-interface RowDataId {
-  cliente: string;
-  lavadores: string;
-  tipoLavado: string;
-  opcionAdicional: string;
-  formaPago: string;
-  timestamp: number;
+interface RowDataId extends RowData {
   id: string;
-  price: number;
 }
+// interface RowDataId {
+//   cliente: string;
+//   lavadores: string;
+//   tipoLavado: string;
+//   opcionAdicional: string;
+//   formaPago: string;
+//   timestamp: number;
+//   id: string;
+//   price: number;
+// }
 
 interface TipoLavado {
   type: string;
@@ -79,7 +81,7 @@ interface TipoLavado {
 
 
 
-type lavadores = string;
+type lavadores = string[];
 
 function App() {
   const mobileView = useMediaQuery("(max-width: 600px)");
@@ -97,12 +99,16 @@ function App() {
     price: 0,
     opcionAdicional: "",
   });
- 
-  const [dolarRate, setDolarRate] = useState<{monitors:{
-    bcv:{
-      price:bigint
-    }
-  }} | null>(null);
+
+  const [dolarRate, setDolarRate] = useState<{
+    monitors: {
+      bcv: {
+        price: number;
+      };
+    };
+  } | null>(null);
+  
+  // const [lavados, setLavados] = useState<RowData[] | RowDataId[] | null>(null);
   const [lavados, setLavados] = useState<RowData[] | RowDataId[] | null>(null);
   const [search, setSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
@@ -169,9 +175,8 @@ function App() {
     return true;
   };
 
-
-  const formatNumber = (num) => {
-    const formatter = new Intl.NumberFormat('en-US', {
+  const formatNumber = (num: number) => {
+    const formatter = new Intl.NumberFormat("en-US", {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
@@ -223,7 +228,7 @@ function App() {
     event: React.FormEvent<HTMLFormElement>
   ): Promise<void> => {
     event.preventDefault();
-   
+
     try {
       const docRef = await addDoc(collection(db, "lavado"), {
         ...data,
@@ -256,26 +261,26 @@ function App() {
     });
   };
 
-  const handleValueLavado = (value: string) => {
-    if (value === "Carros") {
-      return 10;
-    }
-    if (value === "Rust Peq") {
-      return 11;
-    }
-    if (value === "Rust Grande") {
-      return 12;
-    }
-    if (value === "Vans") {
-      return 15;
-    }
-    if (value === "Motor") {
-      return 10;
-    }
-    if (value === "Formula Marina") {
-      return 5;
-    }
-  };
+  // const handleValueLavado = (value: string) => {
+  //   if (value === "Carros") {
+  //     return 10;
+  //   }
+  //   if (value === "Rust Peq") {
+  //     return 11;
+  //   }
+  //   if (value === "Rust Grande") {
+  //     return 12;
+  //   }
+  //   if (value === "Vans") {
+  //     return 15;
+  //   }
+  //   if (value === "Motor") {
+  //     return 10;
+  //   }
+  //   if (value === "Formula Marina") {
+  //     return 5;
+  //   }
+  // };
   const handleValueLavadoModal = (value: string) => {
     console.log(value);
     if (value === "Formula Marina" || value === "Motor") {
@@ -368,13 +373,24 @@ function App() {
       setLoader(false);
     }
   }
+  // const obtenerDatos = async () => {
+  //   const querySnapshot = await getDocs(collection(db, "tipoLavado"));
+  //   querySnapshot.forEach((doc) => {
+  //     setTipoLavado(doc.data().lavados);
+  //   });
+  // };
   const obtenerDatos = async () => {
     const querySnapshot = await getDocs(collection(db, "tipoLavado"));
     querySnapshot.forEach((doc) => {
-      setTipoLavado(doc.data().lavados);
+      setTipoLavado(doc.data().lavados as TipoLavado[]);
     });
   };
-
+  // const obtenerDatosLabadores = async () => {
+  //   const querySnapshot = await getDocs(collection(db, "lavadores"));
+  //   querySnapshot.forEach((doc) => {
+  //     setLavadores(doc.data().lavadores as Lavadores);
+  //   });
+  // };
   const obtenerDatosLabadores = async () => {
     const querySnapshot = await getDocs(collection(db, "lavadores"));
     querySnapshot.forEach((doc) => {
@@ -426,8 +442,13 @@ function App() {
     fetchDolarRate();
   }, []);
 
+  // useEffect(() => {
+  //   if (startDate) {
+  //     filterByDate();
+  //   }
+  // }, [startDate]);
   useEffect(() => {
-    if (startDate) {
+    if (startDate !== null) {
       filterByDate();
     }
   }, [startDate]);
@@ -437,9 +458,13 @@ function App() {
       obtenerData();
     }
   }, [search]);
+  // const getDate = (date: number) => {
+  //   return moment(date).format("MMMM D, YYYY h:mm A");
+  // };
   const getDate = (date: number) => {
     return moment(date).format("MMMM D, YYYY h:mm A");
   };
+  
   return (
     <>
       {loader ? (
@@ -560,7 +585,7 @@ function App() {
             </Button>
           )}
           <Typography variant="h6" gutterBottom sx={{ textAlign: "end" }}>
-            BCV: <b>Bs.F {dolarRate && dolarRate.monitors.bcv.price}</b>
+            BCV: <b>Bs.F {dolarRate && Number(dolarRate.monitors.bcv.price)}</b>
           </Typography>
           {!mobileView ? (
             <TableContainer component={Paper} sx={{}}>
@@ -570,8 +595,12 @@ function App() {
                     <StyledTableCell>Fecha </StyledTableCell>
                     <StyledTableCell align="right">Cliente</StyledTableCell>
                     <StyledTableCell align="right">Lavador</StyledTableCell>
-                    <StyledTableCell align="right">Servicio de Lavado</StyledTableCell>
-                    <StyledTableCell align="right">Método de pago</StyledTableCell>
+                    <StyledTableCell align="right">
+                      Servicio de Lavado
+                    </StyledTableCell>
+                    <StyledTableCell align="right">
+                      Método de pago
+                    </StyledTableCell>
                     <StyledTableCell align="right">Precio</StyledTableCell>
                   </TableRow>
                 </TableHead>
@@ -590,11 +619,11 @@ function App() {
                         <StyledTableCell align="right">
                           {row.lavadores}
                         </StyledTableCell>
-                       
+
                         <StyledTableCell align="right">
                           {row.tipoLavado.slice(0, 1).toLocaleUpperCase() +
                             row.tipoLavado.substring(1) +
-                            (row.opcionAdicional && " + " ) +
+                            (row.opcionAdicional && " + ") +
                             row.opcionAdicional}
                         </StyledTableCell>
 
@@ -618,12 +647,18 @@ function App() {
                           />
                         </StyledTableCell>
                         <StyledTableCell align="right">
-                          <Typography variant="body2">
+                          <Typography variant="body2"
+                          
+                          >
                             <b>${row.price}</b> /
                             <b>
                               {" "}
                               Bs.F
-                              {dolarRate && row.price * dolarRate.monitors.bcv.price.toFixed(0)}
+                             
+                              {dolarRate && row.price *  
+                               // eslint-disable-next-line
+                              // @ts-ignore
+                              dolarRate.monitors.bcv.price.toFixed(0)}
                             </b>
                           </Typography>
                         </StyledTableCell>
@@ -697,11 +732,12 @@ function App() {
                         {tipoLavado && (
                           <Chip
                             size="small"
-                            label={row.tipoLavado.slice(0, 1).toLocaleUpperCase() +
+                            label={
+                              row.tipoLavado.slice(0, 1).toLocaleUpperCase() +
                               row.tipoLavado.substring(1) +
-                              (row.opcionAdicional && " + " ) +
-                              row.opcionAdicional}
-                          
+                              (row.opcionAdicional && " + ") +
+                              row.opcionAdicional
+                            }
                             color={
                               row.tipoLavado === "Rust Peq"
                                 ? "primary"
@@ -726,15 +762,15 @@ function App() {
                           sx={{ fontSize: 16 }}
                           color="success"
                         />
-                      
+
                         <Typography variant="body2">
-                            <b>${row.price}</b> /
-                            <b>
-                              {" "}
-                              Bs.F
-                              {dolarRate && row.price * dolarRate.monitors.bcv.price.toFixed(0)}
-                            </b>
-                          </Typography>
+                          <b>${row.price}</b> /
+                          <b>
+                            {" "}
+                            Bs.F
+                            {dolarRate && row.price * Number(dolarRate.monitors.bcv.price)}
+                          </b>
+                        </Typography>
                       </Box>
 
                       <Box display="flex" alignItems="center" sx={{ gap: 1 }}>
@@ -749,39 +785,22 @@ function App() {
             </>
           )}
 
-          {/* <Typography variant="h6" gutterBottom>
+         
+          <Typography variant="h6" gutterBottom>
             Total de precios:{" "}
             <b>
               $
-              {lavados &&
-                lavados
-                  .reduce(
-                    (total, row) => total + row.price,
-                    0
-                  )
-                  .toFixed(2)}
+              {lavados !== null && formatNumber(
+                lavados.reduce((total, row) => total + row.price, 0)
+              )}
               <b style={{ marginRight: 5, marginLeft: 5 }}>/</b>
               <b style={{ marginRight: 2, marginLeft: 2 }}>Bs.F </b>
-              {lavados &&
-                dolarRate !== null &&
-                lavados
-                  .reduce(
-                    (total, row) => total + row.price,
-                    0
-                  )
-                  .toFixed(2) * dolarRate.monitors.bcv.price}
+              {dolarRate !== null && lavados !== null ?
+                formatNumber(
+                  lavados.reduce((total, row) => total + row.price, 0) * dolarRate.monitors.bcv.price
+                ): ''}
             </b>
-          </Typography> */}
-          <Typography variant="h6" gutterBottom>
-  Total de precios:{" "}
-  <b>
-    $
-    {formatNumber(lavados.reduce((total, row) => total + row.price, 0))}
-    <b style={{ marginRight: 5, marginLeft: 5 }}>/</b>
-    <b style={{ marginRight: 2, marginLeft: 2 }}>Bs.F </b>
-    {dolarRate !== null && formatNumber(lavados.reduce((total, row) => total + row.price, 0) * dolarRate.monitors.bcv.price)}
-  </b>
-</Typography>
+          </Typography>
 
           <Modal
             open={open}
