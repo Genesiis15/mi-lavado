@@ -19,6 +19,8 @@
     "@mui/material": "^6.1.2",
     "@mui/styles": "^6.1.2",
     "@mui/x-date-pickers": "^7.20.0",
+    "axios": "^1.7.7",
+    "consulta-dolar-venezuela": "^1.1.2",
     "firebase": "^10.14.0",
     "moment": "^2.30.1",
     "react": "^18.3.1",
