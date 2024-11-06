@@ -6,6 +6,7 @@ export interface IFormData {
     formaPago: string;
     timestamp: number;
     price: number;
+    priceBs: number
   }
 
  export interface RowDataId {
@@ -17,6 +18,7 @@ export interface IFormData {
     timestamp: number;
     id: string;
     price: number;
+    priceBs: number
   }
   
  export  interface ITipoLavado {

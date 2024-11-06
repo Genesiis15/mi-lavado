@@ -62,6 +62,7 @@ function App() {
         console.error("An unknown error occurred");
       }
     }
+    
   };
 
   const handleCloseModal = () => {
@@ -197,8 +198,7 @@ function App() {
               <b style={{ marginRight: 2, marginLeft: 2 }}>Bs.F </b>
               {dolarRate !== null && lavados !== null
                 ? formatNumber(
-                    lavados.reduce((total, row) => total + row.price, 0) *
-                      dolarRate.monitors.bcv.price
+                    lavados.reduce((total, row) => total + row.priceBs, 0) 
                   )
                 : ""}
             </b>

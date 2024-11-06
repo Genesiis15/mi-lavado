@@ -6,6 +6,7 @@ import { db } from "../../../firebase";
 import { SelectChangeEvent } from "@mui/material/Select";
 import axios from 'axios';
 import { IFormData, ITipoLavado, IDolarRate } from '../../../interface/interfaceWash';
+import { convertPrice } from '../../../utils/convertPrice';
 
 interface Props {
     onSubmit: (data:IFormData) => void
@@ -17,7 +18,11 @@ const FormClientWash=({onSubmit}:Props)=>{
   const mobileView = useMediaQuery("(max-width: 600px)");
     const modalSize = mobileView ? "300px" : "500px";
     const [lavadores, setLavadores] = useState<lavadores[]>([]);
-    const [dolarRate, setDolarRate] = useState<IDolarRate | null>(null);
+    const [dolarRate, setDolarRate] = useState<IDolarRate>({  monitors: {
+      bcv: {
+        price: 0
+      }
+    }});
     const [tipoLavado, setTipoLavado] = useState<ITipoLavado[]>([]);
     const [data, setData] = useState<IFormData>({
         cliente: "",
@@ -26,6 +31,7 @@ const FormClientWash=({onSubmit}:Props)=>{
         formaPago: "",
         timestamp: Date.now(),
         price: 0,
+        priceBs: 0,
         opcionAdicional: "",
       });
 
@@ -62,50 +68,52 @@ const FormClientWash=({onSubmit}:Props)=>{
         return true;
       };
 
+  
+
       const handleValueLavadoModal = (value: string) => {
         console.log(value);
         if (value === "Formula Marina" || value === "Motor") {
           if (value === "Formula Marina") {
             if (data.tipoLavado === "Carros") {
-              setData({ ...data, price: 15, opcionAdicional: value });
+              setData({ ...data, price: 15, priceBs: convertPrice(15, dolarRate), opcionAdicional: value });
             }
             if (data.tipoLavado === "Vans") {
-              setData({ ...data, price: 20, opcionAdicional: value });
+              setData({ ...data, price: 20, priceBs:convertPrice(20, dolarRate), opcionAdicional: value });
             }
             if (data.tipoLavado === "Rust Peq") {
-              setData({ ...data, price: 16, opcionAdicional: value });
+              setData({ ...data, price: 16, priceBs:convertPrice(16, dolarRate), opcionAdicional: value });
             }
             if (data.tipoLavado === "Rust Grande") {
-              setData({ ...data, price: 17, opcionAdicional: value });
+              setData({ ...data, price: 17, priceBs:convertPrice(17, dolarRate), opcionAdicional: value });
             }
           }
           if (value === "Motor") {
             if (data.tipoLavado === "Carros") {
-              setData({ ...data, price: 20, opcionAdicional: value });
+              setData({ ...data, price: 20, priceBs:convertPrice(20, dolarRate), opcionAdicional: value });
             }
             if (data.tipoLavado === "Vans") {
-              setData({ ...data, price: 25, opcionAdicional: value });
+              setData({ ...data, price: 25, priceBs:convertPrice(25, dolarRate), opcionAdicional: value });
             }
             if (data.tipoLavado === "Rust Peq") {
-              setData({ ...data, price: 21, opcionAdicional: value });
+              setData({ ...data, price: 21, priceBs:convertPrice(21, dolarRate), opcionAdicional: value });
             }
             if (data.tipoLavado === "Rust Grande") {
-              setData({ ...data, price: 22, opcionAdicional: value });
+              setData({ ...data, price: 22, priceBs:convertPrice(22, dolarRate), opcionAdicional: value });
             }
           }
         } else {
           if (value === "Carros") {
-            setData({ ...data, tipoLavado: value, price: 10, opcionAdicional: "" });
+            setData({ ...data, tipoLavado: value, price: 10, priceBs:convertPrice(10, dolarRate), opcionAdicional: "" });
           }
           if (value === "Rust Peq") {
-            setData({ ...data, tipoLavado: value, price: 11, opcionAdicional: "" });
+            setData({ ...data, tipoLavado: value, price: 11, priceBs:convertPrice(11, dolarRate), opcionAdicional: "" });
           }
           if (value === "Rust Grande") {
-            setData({ ...data, tipoLavado: value, price: 12, opcionAdicional: "" });
+            setData({ ...data, tipoLavado: value, price: 12, priceBs:convertPrice(12, dolarRate), opcionAdicional: "" });
             return 12;
           }
           if (value === "Vans") {
-            setData({ ...data, tipoLavado: value, price: 15, opcionAdicional: "" });
+            setData({ ...data, tipoLavado: value, price: 15, priceBs:convertPrice(15, dolarRate), opcionAdicional: "" });
             return 15;
           }
         }
@@ -233,7 +241,7 @@ const FormClientWash=({onSubmit}:Props)=>{
                     <b style={{ marginRight: 5, marginLeft: 5 }}>/</b>
                     Bs.F:{" "}
                     <b>
-                      {dolarRate && data.price * dolarRate.monitors.bcv.price}
+                      {dolarRate && (data.price * dolarRate.monitors.bcv.price).toFixed(0)}
                     </b>
                   </Typography>
                 </Box>

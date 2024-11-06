@@ -1,7 +1,7 @@
 import { Chip, Paper, Table, TableBody, TableCell, tableCellClasses, TableContainer, TableHead, TableRow, Typography } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import moment from "moment";
-import { IFormData } from "../../../interface/interfaceWash";
+import { IFormData, RowDataId } from "../../../interface/interfaceWash";
 
 interface Props {
     lavados: IFormData[] | RowDataId[] | null
@@ -14,18 +14,7 @@ interface Props {
     } | null
 }
 
-interface RowDataId {
-    cliente: string;
-    lavadores: string;
-    tipoLavado: string;
-    opcionAdicional: string;
-    formaPago: string;
-    timestamp: number;
-    id: string;
-    price: number;
-  }
-
-export const ListClientWash = ({lavados, dolarRate}:Props)=>{
+export const ListClientWash = ({lavados}:Props)=>{
     
    
     
@@ -126,10 +115,7 @@ export const ListClientWash = ({lavados, dolarRate}:Props)=>{
                               {" "}
                               Bs.F
                              
-                              {dolarRate && row.price *  
-                               // eslint-disable-next-line
-                              // @ts-ignore
-                              dolarRate.monitors.bcv.price.toFixed(0)}
+                             {row.priceBs}
                             </b>
                           </Typography>
                         </StyledTableCell>
