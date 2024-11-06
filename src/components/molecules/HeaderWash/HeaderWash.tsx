@@ -4,7 +4,7 @@ import LocalCarWashIcon from "@mui/icons-material/LocalCarWash";
 import SearchIcon from "@mui/icons-material/Search";
 import { CalendarIcon, DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import {  useState } from "react";
-import { IFormData } from "../../../interface/interfaceWash";
+import { IFormData, RowDataId } from "../../../interface/interfaceWash";
 import { AdapterMoment } from "@mui/x-date-pickers/AdapterMoment";
 
 interface Props {
@@ -19,33 +19,13 @@ interface Props {
     
 }
 
-interface RowDataId {
-    cliente: string;
-    lavadores: string;
-    tipoLavado: string;
-    opcionAdicional: string;
-    formaPago: string;
-    timestamp: number;
-    id: string;
-    price: number;
-  }
-
-
 export const HeaderWash = ({handleInputChange, filterByLavadores, handleChange, search,  handleOpen, isSearching, lavados}: Props)=>{
 
     const mobileView = useMediaQuery("(max-width: 600px)");
-  const buttonSize = mobileView ? "small" : "medium";
+    const buttonSize = mobileView ? "small" : "medium";
     const [openModalDate, setOpenModalDate] = useState(false);
     const handleClose = () => setOpenModalDate(false);
-   
     const handleOpenModalDate = () => setOpenModalDate(true);
-
-
-    
-
-  
-
-   
    
     return<>
     <Box sx={{ flexGrow: 1 }}>

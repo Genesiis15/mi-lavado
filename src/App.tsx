@@ -1,13 +1,10 @@
-import {
-  CircularProgress,
- useMediaQuery,
-} from "@mui/material";
+import { CircularProgress, useMediaQuery} from "@mui/material";
 import Button from "@mui/material/Button";
 import Modal from "@mui/material/Modal";
 import Typography from "@mui/material/Typography";
 import React, { useEffect, useState } from "react";
 import "./App.css";
-import { IFormData, TipoLavado } from "./interface/interfaceWash";
+import { IFormData, RowDataId, ITipoLavado, IDolarRate } from "./interface/interfaceWash";
 import FormClientWash from "./components/molecules/FormClientWash/FormClientWash";
 import { addWash, dateWash, filterWash, getTypeWashes, getWashData } from "./services/serviceWash";
 import { ListClientWash } from "./components/molecules/ListClientWash/ListClientWash";
@@ -15,36 +12,14 @@ import { CardClientWash } from "./components/molecules/CardClientWash/CardClient
 import { HeaderWash } from "./components/molecules/HeaderWash/HeaderWash";
 import { fetchDolarRate } from "./services/serviceDolar";
 
-interface RowDataId extends IFormData {
-  id: string;
-}
-
 
 function App() {
   const mobileView = useMediaQuery("(max-width: 600px)");
   const buttonSize = mobileView ? "small" : "medium";
   const [open, setOpen] = useState(false);
-  const [tipoLavado, setTipoLavado] = useState<TipoLavado[]>([]);
-  // const [data, setData] = useState<IFormData>({
-  //   cliente: "",
-  //   lavadores: "",
-  //   tipoLavado: "",
-  //   formaPago: "",
-  //   timestamp: Date.now(),
-  //   price: 0,
-  //   opcionAdicional: "",
-  // });
-
-  const [dolarRate, setDolarRate] = useState<{
-    monitors: {
-      bcv: {
-        price: number;
-      };
-    };
-  } | null>(null);
-  const [lavados, setLavados] = useState<IFormData[] | RowDataId[] | null>(
-    null
-  );
+  const [tipoLavado, setTipoLavado] = useState<ITipoLavado[]>([]);
+  const [dolarRate, setDolarRate] = useState<IDolarRate | null>(null);
+  const [lavados, setLavados] = useState<IFormData[] | RowDataId[] | null>(null);
   const [search, setSearch] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const [startDate, setStartDate] = useState<Date | null>(new Date());
@@ -91,25 +66,11 @@ function App() {
 
   const handleCloseModal = () => {
     setOpen(false);
-    // setData({
-    //   cliente: "",
-    //   tipoLavado: "",
-    //   lavadores: "",
-    //   formaPago: "",
-    //   timestamp: Date.now(),
-    //   price: 0,
-    //   opcionAdicional: "",
-    // });
   };
 
   const handleInputChange = (e: string) => {
-    console.log(e);
-
     const date = new Date(new Date(e).getTime());
-    console.log(date);
-
     setStartDate(date);
-
   };
 
   async function filterByLavadores() {
@@ -151,7 +112,6 @@ function App() {
     obtenerData();
   }, []);
   useEffect(() => {
-   
     fetchDolarRate().then((res)=>setDolarRate(res))
   }, []);
 
@@ -244,12 +204,7 @@ function App() {
             </b>
           </Typography>
 
-          <Modal
-            open={open}
-            onClose={handleCloseModal}
-            aria-labelledby="modal-modal-title"
-            aria-describedby="modal-modal-description"
-          >
+          <Modal open={open} onClose={handleCloseModal} aria-labelledby="modal-modal-title" aria-describedby="modal-modal-description">
             <FormClientWash onSubmit={(data) => createDoc(data)} />
           </Modal>
         </div>

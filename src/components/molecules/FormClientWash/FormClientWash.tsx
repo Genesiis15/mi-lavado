@@ -1,36 +1,23 @@
-import { Box, Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography } from '@mui/material';
+import { Box, Button, FormControl, InputLabel, MenuItem, Select, Stack, TextField, Typography, useMediaQuery } from '@mui/material';
 import {  useState, useEffect } from "react";
 import AttachMoneyIcon from "@mui/icons-material/AttachMoney";
 import {  collection, getDocs } from "firebase/firestore";
 import { db } from "../../../firebase";
-
 import { SelectChangeEvent } from "@mui/material/Select";
 import axios from 'axios';
-import { IFormData } from '../../../interface/interfaceWash';
+import { IFormData, ITipoLavado, IDolarRate } from '../../../interface/interfaceWash';
 
 interface Props {
     onSubmit: (data:IFormData) => void
 }
 
-
-
-  interface ITipoLavado {
-    type: string;
-    value: string;
-  }
-
   type lavadores = string[];
 
 const FormClientWash=({onSubmit}:Props)=>{
-    // const modalSize = mobileView ? "300px" : "500px";
+  const mobileView = useMediaQuery("(max-width: 600px)");
+    const modalSize = mobileView ? "300px" : "500px";
     const [lavadores, setLavadores] = useState<lavadores[]>([]);
-    const [dolarRate, setDolarRate] = useState<{
-        monitors: {
-          bcv: {
-            price: number;
-          };
-        };
-      } | null>(null);
+    const [dolarRate, setDolarRate] = useState<IDolarRate | null>(null);
     const [tipoLavado, setTipoLavado] = useState<ITipoLavado[]>([]);
     const [data, setData] = useState<IFormData>({
         cliente: "",
@@ -47,12 +34,11 @@ const FormClientWash=({onSubmit}:Props)=>{
         top: "50%",
         left: "50%",
         transform: "translate(-50%, -50%)",
-    
         bgcolor: "background.paper",
         borderRadius: "5px",
         boxShadow: 24,
         p: 4,
-        // width: modalSize,
+        width: modalSize,
         height: "auto",
         maxWidth: "none",
         maxHeight: "none",

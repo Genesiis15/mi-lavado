@@ -1,6 +1,6 @@
 import { addDoc, collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase";
-import { IFormData, RowDataId, TipoLavado } from "../interface/interfaceWash";
+import { IFormData, RowDataId, ITipoLavado } from "../interface/interfaceWash";
 
 export const addWash = async (data: IFormData)=>{
      await addDoc(collection(db, "lavado"), {
@@ -33,9 +33,9 @@ export const getWashData = async ()=>{
 
     export const getTypeWashes = async ()=>{
         const querySnapshot = await getDocs(collection(db, "tipoLavado"));
-        let res: TipoLavado[] = []
+        let res: ITipoLavado[] = []
         querySnapshot.forEach((doc) => {
-          res=(doc.data().lavados as TipoLavado[]);
+          res=(doc.data().lavados as ITipoLavado[]);
         });  
         return res
     };

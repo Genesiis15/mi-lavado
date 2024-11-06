@@ -19,7 +19,19 @@ export interface IFormData {
     price: number;
   }
   
- export  interface TipoLavado {
+ export  interface ITipoLavado {
     type: string;
     value: string;
+  }
+
+  export interface RowDataId extends IFormData {
+    id: string;
+  }
+
+  export interface IDolarRate {
+    monitors: {
+      bcv: {
+        price: number;
+      };
+    };
   }
