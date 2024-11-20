@@ -29,6 +29,7 @@ export const FormRegisterInventory = ({
     idCategory: "",
     name: "",
     price: 0,
+    idProduct:''
   });
 
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
