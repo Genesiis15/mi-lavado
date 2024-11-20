@@ -37,3 +37,13 @@ export interface IFormData {
       };
     };
   }
+
+export interface IFormSellInventory {
+  
+count: number
+idProduct: string
+name: string 
+price: number 
+timestamp: number;
+
+}
